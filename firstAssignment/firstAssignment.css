@@ -1,0 +1,16 @@
+#chart {
+    background-color: white;
+    border: 1px solid #CCC;
+}
+
+.bar{
+    fill: blue;
+    shape-rendering: crispEdges;
+}
+
+.bar-label{
+    text-anchor: end;
+    fill: white;
+    font-size: 20px;
+}
+
