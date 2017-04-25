@@ -1,18 +1,17 @@
 var datagenerator = {};
 
-
 datagenerator.loadData = function(){
+     
+    var parseTime = d3.timeParse("%Y%m%d");
+    var parsedData = [];
     
-    
-    d3.csv("data.csv", function(error, dataset){
+    d3.csv("data.csv", function(dataset){
         dataset.forEach(function(d){
-            var dateTest = d['date'];
-            console.log(parseTime(dateTest));
-            
+            d.date = parseTime(d.date);
         })
     });
     
 }
 
-window.onload = datagenerator.loadData();
+//window.onload = datagenerator.loadData();
 
