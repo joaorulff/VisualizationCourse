@@ -13,7 +13,7 @@ timeChart.xScale        = d3.scaleTime().range([0,timeChart.width]);
 timeChart.yScale        = d3.scaleLinear().range([timeChart.height, 0]);
 timeChart.xScaleBrush   = d3.scaleLinear().range([0,timeChart.width]);
 timeChart.yScaleBrush   = d3.scaleLinear().range([timeChart.heightBrush,0]);
-timeChart.colorScale    = d3.scaleOrdinal(d3.schemeCategory10);
+timeChart.colorScale    = d3.scaleOrdinal(d3.schemeCategory20);
 
 timeChart.line          = undefined;
 timeChart.brushLine     = undefined;
@@ -22,13 +22,13 @@ timeChart.xAxis         = d3.axisBottom(timeChart.xScale);
 timeChart.yAxis         = d3.axisLeft(timeChart.yScale);
 timeChart.brushXAxis    = d3.axisBottom(timeChart.xScaleBrush);
 
-timeChart.brush         = d3.brushX()//.extent([[0,0], [timeChart.width, timeChart.heightBrush]])
+timeChart.brush         = d3.brushX().extent([[0,0], [timeChart.width, timeChart.heightBrush]])
                                     .on("brush", brushed);
 
-//timeChart.zoom = d3.zoom().scaleExtent([1, Infinity])
-//                            .translateExtent([[0, 0], [timeChart.width, timeChart.height]])
-//                            .extent([[0, 0], [timeChart.width, timeChart.height]])
-//                            .on("zoom", zoomed);
+timeChart.zoom          = d3.zoom().scaleExtent([1, Infinity])
+                            .translateExtent([[0, 0], [timeChart.width, timeChart.height]])
+                            .extent([[0, 0], [timeChart.width, timeChart.height]])
+                            .on("zoom", zoomed);
 
 var svgRef, groupRef, brushGroupRef;
 
@@ -40,12 +40,6 @@ timeChart.appendSVG = function(DOMObj){
         .attr('width', timeChart.width + timeChart.margins.left + timeChart.margins.right)
         .attr('height', timeChart.height + timeChart.margins.bottom + timeChart.margins.top);
     
-    svgRef.append("defs").append("clipPath")
-                    .attr("id", "clip")
-                    .append("rect")
-                    .attr("width", timeChart.width)
-                    .attr("height", timeChart.height);
-    
     return svgRef;
     
 }
@@ -53,6 +47,7 @@ timeChart.appendSVG = function(DOMObj){
 timeChart.appendGroup = function(svgRef){
     
     var group = svgRef.append('g')
+                        .attr("class", "groupRef")
                         .attr('transform', 'translate(' + timeChart.margins.left + ',' + timeChart.margins.top + ')');
     
     return group;
@@ -61,6 +56,7 @@ timeChart.appendGroup = function(svgRef){
 timeChart.appendBrushGroup = function(svgRef){
     
     var group = svgRef.append('g')
+                        .attr("class", "brushGroupRef")
                         .attr('transform', 'translate(' + timeChart.brushMargins.left + "," + timeChart.brushMargins.top + ')');
     
     return group;
@@ -69,7 +65,7 @@ timeChart.appendBrushGroup = function(svgRef){
 timeChart.defineLine = function(){
     
     timeChart.line = d3.line()
-                        .defined(function(d) { return !isNaN(d.temperature); })
+                        //.defined(function(d) { return !isNaN(d.temperature); })
                         .x(function(d) {return timeChart.xScale(d.date); })
                         .y(function(d) {return timeChart.yScale(d.temperature); });
 
@@ -78,7 +74,7 @@ timeChart.defineLine = function(){
 timeChart.defineBrushLine = function(){
     
     timeChart.brushLine = d3.line()
-                        .defined(function(d) { return !isNaN(d.temperature); })
+                        //.defined(function(d) { return !isNaN(d.temperature); })
                         .x(function(d) {return timeChart.xScaleBrush(d.date); })
                         .y(function(d) {return timeChart.yScaleBrush(d.temperature); });
     
@@ -112,9 +108,7 @@ timeChart.loadAndAppendData = function(groupRef, brushGroupRef){
             return parseTime(row.date);
         }));
         
-        timeChart.xScaleBrush.domain(d3.extent(dataset, function(row){
-            return parseTime(row.date);
-        }));
+        timeChart.xScaleBrush.domain(timeChart.xScale.domain());
         
         
         timeChart.yScale.domain([
@@ -160,10 +154,11 @@ timeChart.loadAndAppendData = function(groupRef, brushGroupRef){
                     .append("g")
                     .attr("class", "city");
         
-        city.append("path")
+            groupRef.selectAll(".city").append("path")
             .attr("class", "line")
             .attr("d", function(d) { return timeChart.line(d.values); })
             .style("stroke", function(d) { return timeChart.colorScale(d.city); });
+        
         
         
         var cityBrush = brushGroupRef.selectAll(".cityBrush")
@@ -181,23 +176,7 @@ timeChart.loadAndAppendData = function(groupRef, brushGroupRef){
         brushGroupRef.append("g")
                     .attr("class", "brush")
                     .call(timeChart.brush)
-                    .call(timeChart.brush.move, timeChart.xScale.range());
-        
-//        svgRef.append("rect")
-//                  .attr("class", "zoom")
-//                  .attr("width", timeChart.width)
-//                  .attr("height", timeChart.height)
-//                  .attr("transform", "translate(" + timeChart.margins.left + "," + timeChart.margins.top + ")")
-//                  .call(timeChart.zoom);
-        
-//        city.append("text")
-//            .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
-//            .attr("transform", function(d) { return "translate(" + timeChart.xScale(d.value.date) + "," + timeChart.yScale(d.value.temperature) + ")"; })
-//            .attr("x", 3)
-//            .attr("dy", "0.35em")
-//            .style("font", "10px sans-serif")
-//            .text(function(d) { return d.id; });
-        
+                    .call(timeChart.brush.move, timeChart.xScale.range());    
     });
     
 }
@@ -218,45 +197,37 @@ timeChart.appendYAxisGroup = function(groupRef){
                 .attr("class", "axis axis--y")
                 .call(d3.axisLeft(timeChart.yScale));
     
-    
 }
 
 
 timeChart.appendXAxisBrushGroup = function(brushGroupRef){
     
     brushGroupRef.append("g")
-        .attr("class", "x axis")
+        .attr("class", "axis axis--x")
         .attr("transform", "translate(0," + timeChart.heightBrush + ")")
         .call(timeChart.brushXAxis);
     
 }
 
 function brushed() {
-  timeChart.xScale.domain(d3.event.sourceEvent && d3.event.sourceEvent.type != "brush" ? timeChart.xScaleBrush.domain() : timeChart.brush.extent());
-  groupRef.selectAll(".line").attr("d",  function(d) { return timeChart.line(d.values)});
-  groupRef.select("axis axis--x").call(timeChart.xAxis);
-  groupRef.select("axis axis--y").call(timeChart.yAxis);
+  if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+  var s = d3.event.selection || timeChart.xScaleBrush.range();
+  timeChart.xScale.domain(s.map(timeChart.xScaleBrush.invert, timeChart.xScaleBrush));
+  groupRef.selectAll(".line").attr("d", function(d){ return timeChart.line(d.values) });
+  groupRef.select(".axis--x").call(timeChart.xAxis);
+  svgRef.select(".zoom").call(timeChart.zoom.transform, d3.zoomIdentity
+      .scale(timeChart.width / (s[1] - s[0]))
+      .translate(-s[0], 0));
 }
 
-//function brushed() {
-//  if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
-//  var s = d3.event.selection || timeChart.xScaleBrush.range();
-//  timeChart.xScale.domain(s.map(timeChart.xScaleBrush.invert, timeChart.xScaleBrush));
-//  //groupRef.select(".line").attr("d", area);
-//  groupRef.select(".axis--x").call(timeChart.xAxis);
-//  svgRef.select(".zoom").call(timeChart.zoom.transform, d3.zoomIdentity
-//      .scale(timeChart.width / (s[1] - s[0]))
-//      .translate(-s[0], 0));
-//}
-
-//function zoomed() {
-//  if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
-//  var t = d3.event.transform;
-//  timeChart.xScale.domain(t.rescaleX(timeChart.xScaleBrush).domain());
-//  //focus.select(".area").attr("d", area);
-//  groupRef.select(".axis--x").call(timeChart.xAxis);
-//  brushGroupRef.select(".brush").call(timeChart.brush.move, timeChart.xScale.range().map(t.invertX, t));
-//}
+function zoomed() {
+  if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
+  var t = d3.event.transform;
+  timeChart.xScale.domain(t.rescaleX(timeChart.xScaleBrush).domain());
+  groupRef.selectAll(".line").attr("d", function(d){ return timeChart.line(d.values) });
+  groupRef.select(".axis--x").call(timeChart.xAxis);
+  brushGroupRef.select(".brush").call(timeChart.brush.move, timeChart.xScale.range().map(t.invertX, t));
+}
 
 timeChart.run = function(){
     
