@@ -13,6 +13,7 @@ myChart.yScale          = undefined;
 myChart.colorScale      = undefined;
 myChart.arrayOfGroups   = undefined;
 myChart.brush           = undefined;
+myChart.zoom            = undefined;
 
 myChart.appendSVG = function(DOMObj){
     
@@ -28,8 +29,32 @@ myChart.appendSVG = function(DOMObj){
 
 myChart.createAxes = function(DOMSVGObj){
     
-    myChart.xScale = d3.scaleLinear().domain([0,100]).range([0,myChart.width]);
-    myChart.yScale = d3.scaleLinear().domain([0,100]).range([myChart.height,0]);
+    var minX = d3.min(myChart.dataset, function(list){
+        return d3.min(list, function(element){
+            return element.x;
+        })
+    });
+    
+    var maxX = d3.max(myChart.dataset, function(list){
+        return d3.max(list, function(element){
+            return element.x;
+        })
+    });
+    
+    var minY = d3.min(myChart.dataset, function(list){
+        return d3.min(list, function(element){
+            return element.y;
+        })
+    });
+    
+    var maxY = d3.max(myChart.dataset, function(list){
+        return d3.max(list, function(element){
+            return element.y;
+        })
+    });
+    
+    myChart.xScale = d3.scaleLinear().domain([minX,maxX]).range([0,myChart.width]);
+    myChart.yScale = d3.scaleLinear().domain([minY,maxY]).range([myChart.height,0]);
     
     var xAxisGroup = DOMSVGObj.append('g')
                             .attr('class', 'xAxis')
@@ -50,55 +75,68 @@ myChart.createAxes = function(DOMSVGObj){
     
 }
 
-myChart.appendChartGroups = function(DOMSVGObj){
-    
-    var chartsAreas = [];
-    
-    for(var i = 0; i < myChart.dataset.length; i++){
+myChart.appendChartGroup = function(DOMSVGObj){
         
-        var chartArea = DOMSVGObj.append('g')
-                        .attr('width', myChart.width)
-                        .attr('height', myChart.height)
-                        .attr('transform', 'translate(' + myChart.margins.left + ',' + myChart.margins.top + ')');
-        
-        chartsAreas.push(chartArea);
-        
-    }
-    
-    return chartsAreas;
+    var chartArea = DOMSVGObj.append('g')
+                    .attr('class', 'chart-area')
+                    .attr('width', myChart.width)
+                    .attr('height', myChart.height)
+                    .attr('transform', 'translate(' + myChart.margins.left + ',' + myChart.margins.top + ')');
+
+    return chartArea;
     
 }
 
 
 myChart.appendData = function(DOMSVGObj){
     
-    var transition = d3.transition()
-                        .duration(750);
+    var transition = d3.transition().duration(750);
     
-    myChart.dataset.forEach(function(data, index){
-        
-        var circlesSelection = DOMSVGObj[index].selectAll('circle')
-                                        .data(data)
-                                        .enter()
-                                        .append('circle')
-                                        .transition(transition)
-                                        .attr('cx', function(d){
-                                            return myChart.xScale(d.x);
-                                        })
-                                        .attr('cy', function(d) {
-                                            return myChart.yScale(d.y);
-                                        })
-                                        .attr('r', function(d){
-                                            return 5;
-                                        });
-        
-        circlesSelection.style('fill', function(){
-            return myChart.colorScale(index);
-        });
-        
-    });
+    var circlesSelection = DOMSVGObj.selectAll('.series')
+                                    .data(myChart.dataset)
+                                    .enter()
+                                    .append('g')
+                                    .attr('class', 'series')
+                                    .style('fill', function(data, index){
+                                        return myChart.colorScale(index);
+                                    })
+                                    .selectAll(".point")
+                                    .data(function(d){
+                                            return d;
+                                    })
+                                    .enter()
+                                    .append('circle')
+                                    .transition(transition)
+                                    .attr("class", "point")
+                                    .attr("r", 4.5)
+                                    .attr("cx", function(d) { return myChart.xScale(d.x) })
+                                    .attr("cy", function(d) { return myChart.yScale(d.y); }); 
+   
     
-    //return circles;
+    return circlesSelection;
+    
+    
+}
+
+myChart.addZoom = function(svg){
+    
+    function zoomed(){
+        
+        var transformation = d3.event.transform;
+        
+        var newScaleX = transformation.rescaleX(myChart.xScale);
+        myChart.xAxis.scale(newScaleX);
+        
+        var xAxisGroup = svg.select('.xAxis');
+        xAxisGroup.call(myChart.xAxis);
+        
+        svg.select('.chart-area')
+                .selectAll('circle')
+                .attr("cx",  function(d){ return newScaleX(d.x); });        
+        
+    }
+    
+    myChart.zoom = d3.zoom().on("zoom", zoomed);
     
     
 }
@@ -113,24 +151,22 @@ myChart.addBrush = function(DOMSVGObj){
     
     function brushed()
     {        
-        var coordinates = d3.event.selection,
-           x0 = coordinates[0][0],
-           y0 = coordinates[0][1],
-           x1 = coordinates[1][0],
-           y1 = coordinates[1][1];
+        var s = d3.event.selection;
+        var x0 = s[0][0],
+            y0 = s[0][1],
+            x1 = s[1][0],
+            y1 = s[1][1];
         
         DOMSVGObj.selectAll('circle')
             .style("fill", function (d) 
-            {
-                if (myChart.xScale(d.cx) >= x0 && myChart.xScale(d.cx) <= x1 && 
-                    myChart.yScale(d.cy) >= y0 && myChart.yScale(d.cy) <= y1)
-                { return "white"; }
-                else 
-                { return "rgb(150,150,190)"; }
+            {   
+                if (myChart.xScale(d.x) >= x0 && myChart.xScale(d.x) <= x1 && 
+                    myChart.yScale(d.y) >= y0 && myChart.yScale(d.y) <= y1)
+                { return "black"; }
             });        
     };
     
-     myChart.brush = d3.brush()
+    myChart.brush = d3.brush() 
                 .on('start brush', brushed);
     
     DOMSVGObj.append('g')
@@ -144,16 +180,15 @@ myChart.addBrush = function(DOMSVGObj){
 myChart.run = function(){
     
     var svg = myChart.appendSVG("#mainDiv");
-    var svgGroups = myChart.appendChartGroups(svg);
+    var svgGroup = myChart.appendChartGroup(svg);
     
     
     myChart.createAxes(svg);
     myChart.generateColorScale();
-    myChart.appendData(svgGroups);
-    //myChart.addBrush(svgGroups[1]);
+    myChart.appendData(svgGroup);
+    
+    myChart.addBrush(svgGroup);
     
 }
-
-
 
 window.onload = myChart.run;

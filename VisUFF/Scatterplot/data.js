@@ -23,5 +23,6 @@ dataGenerator.generateData = function(numberOfEntries, numberOfSets){
         dataset.push(array);
     }
     
+    console.log(dataset);
     return dataset;
 }
