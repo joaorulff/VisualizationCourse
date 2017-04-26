@@ -6,12 +6,18 @@ myChart.margins = {top: 20, bottom: 20, left: 20, right: 20};
 myChart.width = 500;
 myChart.height = 400;
 myChart.dataset = dataGenerator.generateData(10, 5);
+
+
 myChart.xAxis           = undefined;
 myChart.yAxis           = undefined;
+
+myChart.originalXScale  = undefined;
 myChart.xScale          = undefined;
 myChart.yScale          = undefined;
+
 myChart.colorScale      = undefined;
 myChart.arrayOfGroups   = undefined;
+
 myChart.brush           = undefined;
 myChart.zoom            = undefined;
 
@@ -54,6 +60,7 @@ myChart.createAxes = function(DOMSVGObj){
     });
     
     myChart.xScale = d3.scaleLinear().domain([minX,maxX]).range([0,myChart.width]);
+    myChart.originalXScale = d3.scaleLinear().domain([minX,maxX]).range([0,myChart.width]);
     myChart.yScale = d3.scaleLinear().domain([minY,maxY]).range([myChart.height,0]);
     
     var xAxisGroup = DOMSVGObj.append('g')
@@ -124,19 +131,26 @@ myChart.addZoom = function(svg){
         
         var transformation = d3.event.transform;
         
-        var newScaleX = transformation.rescaleX(myChart.xScale);
-        myChart.xAxis.scale(newScaleX);
+        myChart.xScale = transformation.rescaleX(myChart.originalXScale);
+        myChart.xAxis.scale(myChart.xScale);
         
         var xAxisGroup = svg.select('.xAxis');
         xAxisGroup.call(myChart.xAxis);
         
         svg.select('.chart-area')
                 .selectAll('circle')
-                .attr("cx",  function(d){ return newScaleX(d.x); });        
+                .attr("cx",  function(d){ return myChart.xScale(d.x); });  
         
     }
     
     myChart.zoom = d3.zoom().on("zoom", zoomed);
+    
+    svg.append("rect")
+        .attr("class", "zoom")
+        .attr("width", myChart.width)
+        .attr("height", myChart.margins.bottom)
+        .attr('transform', 'translate('+ myChart.margins.left +','+ (myChart.height+myChart.margins.top) +')')
+        .call(myChart.zoom); 
     
     
 }
@@ -177,7 +191,10 @@ myChart.addBrush = function(DOMSVGObj){
 
 
 
-myChart.run = function(){
+myChart.run = function(xAxis, yAxis){
+    
+    console.log('xAxis', xAxis);
+    console.log('yAxis', yAxis);
     
     var svg = myChart.appendSVG("#mainDiv");
     var svgGroup = myChart.appendChartGroup(svg);
@@ -188,7 +205,8 @@ myChart.run = function(){
     myChart.appendData(svgGroup);
     
     myChart.addBrush(svgGroup);
+    myChart.addZoom(svg);
     
 }
 
-window.onload = myChart.run;
+window.onload = myChart.run("test", "test1");
