@@ -3,8 +3,8 @@
 var myChart = {};
 
 myChart.margins = {top: 20, bottom: 20, left: 20, right: 20};
-myChart.width = 500;
-myChart.height = 400;
+myChart.width           = undefined;
+myChart.height          = undefined;
 myChart.dataset = dataGenerator.generateData(10, 5);
 
 
@@ -191,16 +191,17 @@ myChart.addBrush = function(DOMSVGObj){
 
 
 
-myChart.run = function(xAxis, yAxis){
+myChart.run = function(domElement, width, height, margin, xAxis, yAxis, tickType, labelX, labelY, dataLabel, zoomX, zoomY, brush){
     
-    console.log('xAxis', xAxis);
-    console.log('yAxis', yAxis);
+    myChart.width = width;
+    myChart.height = height;
+    myChart.margins = margin;
     
-    var svg = myChart.appendSVG("#mainDiv");
+    var svg = myChart.appendSVG(domElement);
     var svgGroup = myChart.appendChartGroup(svg);
     
     
-    myChart.createAxes(svg);
+    myChart.createAxes(svg, xAxis, yAxis);
     myChart.generateColorScale();
     myChart.appendData(svgGroup);
     
@@ -209,4 +210,4 @@ myChart.run = function(xAxis, yAxis){
     
 }
 
-window.onload = myChart.run("test", "test1");
+//window.onload = myChart.run;
