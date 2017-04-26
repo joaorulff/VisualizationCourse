@@ -2,7 +2,7 @@
 
 var myChart = {};
 
-myChart.margins = {top: 20, bottom: 20, left: 20, right: 20};
+myChart.margins         = undefined;
 myChart.width           = undefined;
 myChart.height          = undefined;
 myChart.dataset = dataGenerator.generateData(10, 5);
@@ -33,7 +33,7 @@ myChart.appendSVG = function(DOMObj){
     
 }
 
-myChart.createAxes = function(DOMSVGObj){
+myChart.createAxes = function(DOMSVGObj, xAxis, yAxis, textXAxis, textYAxis, tickFormat){
     
     var minX = d3.min(myChart.dataset, function(list){
         return d3.min(list, function(element){
@@ -61,24 +61,55 @@ myChart.createAxes = function(DOMSVGObj){
     
     myChart.xScale = d3.scaleLinear().domain([minX,maxX]).range([0,myChart.width]);
     myChart.originalXScale = d3.scaleLinear().domain([minX,maxX]).range([0,myChart.width]);
+    
     myChart.yScale = d3.scaleLinear().domain([minY,maxY]).range([myChart.height,0]);
+    myChart.originalYScale = d3.scaleLinear().domain([minY,maxY]).range([myChart.height,0]);
     
+    
+        
     var xAxisGroup = DOMSVGObj.append('g')
-                            .attr('class', 'xAxis')
-                            .attr('transform', 'translate(' + myChart.margins.left + ',' + (myChart.margins.top + myChart.height) + ')');
+                        .attr('class', 'xAxis')
+                        .attr('transform', 'translate(' + myChart.margins.left + ',' + (myChart.margins.top + myChart.height) + ')');
+
+    myChart.xAxis = d3.axisBottom(myChart.xScale).ticks(10)
+        .tickFormat(d3.format(tickFormat));
+        
+    if(xAxis){
+        xAxisGroup.call(myChart.xAxis);
+    }
     
+        
     var yAxisGroup = DOMSVGObj.append('g')
-                            .attr('class', 'yAxis')
-                            .attr('transform', 'translate(' + myChart.margins.left + ',' + myChart.margins.top + ')');
-                                
+                        .attr('class', 'yAxis')
+                        .attr('transform', 'translate(' + myChart.margins.left + ',' + myChart.margins.top + ')');
+
+    myChart.yAxis = d3.axisLeft(myChart.yScale).ticks(10)
+        .tickFormat(d3.format(tickFormat));
+    
+    //Append LabelX
+    xAxisGroup.append("text")
+                .attr("class", "label")
+                .attr("x", myChart.width)
+                .attr("y", -5)
+                .style("text-anchor", "end")
+                .style("fill", "black")
+                .text(textXAxis);
+    
+    //Append LabelY
+    yAxisGroup.append("text")
+                .attr("class", "label")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("dy", ".90em")
+                .attr("transform", "rotate(-90)")
+                .style("text-anchor", "end")
+                .style("fill", "black")
+                .text(textYAxis);
     
     
-    myChart.xAxis = d3.axisBottom(myChart.xScale);
-    myChart.yAxis = d3.axisLeft(myChart.yScale);
-    
-    xAxisGroup.call(myChart.xAxis);
-    yAxisGroup.call(myChart.yAxis);
-    
+    if(yAxis){
+        yAxisGroup.call(myChart.yAxis);
+    }
     
 }
 
@@ -125,7 +156,7 @@ myChart.appendData = function(DOMSVGObj){
     
 }
 
-myChart.addZoom = function(svg){
+myChart.addZoomX = function(svg, xAxis){
     
     function zoomed(){
         
@@ -133,13 +164,17 @@ myChart.addZoom = function(svg){
         
         myChart.xScale = transformation.rescaleX(myChart.originalXScale);
         myChart.xAxis.scale(myChart.xScale);
-        
+      
         var xAxisGroup = svg.select('.xAxis');
-        xAxisGroup.call(myChart.xAxis);
         
+        if(xAxis){
+            xAxisGroup.call(myChart.xAxis);
+        }
+        
+          
         svg.select('.chart-area')
                 .selectAll('circle')
-                .attr("cx",  function(d){ return myChart.xScale(d.x); });  
+                .attr("cx",  function(d){ return myChart.xScale(d.x);  });  
         
     }
     
@@ -152,6 +187,40 @@ myChart.addZoom = function(svg){
         .attr('transform', 'translate('+ myChart.margins.left +','+ (myChart.height+myChart.margins.top) +')')
         .call(myChart.zoom); 
     
+    
+}
+
+myChart.addZoomY = function(svg, yAxis){
+    
+    function zoomed(){
+        
+        var transformation = d3.event.transform;
+        
+        myChart.yScale = transformation.rescaleY(myChart.originalYScale);
+        myChart.yAxis.scale(myChart.yScale);
+            
+        var yAxisGroup = svg.select('.yAxis');
+        
+        if(yAxis){
+            yAxisGroup.call(myChart.yAxis);
+        }
+        
+        
+        svg.select('.chart-area')
+                .selectAll('circle')
+                .attr("cy",  function(d){ return myChart.yScale(d.y);  });  
+        
+    }
+    
+    
+    myChart.zoom = d3.zoom().on("zoom", zoomed);
+    
+    svg.append("rect")
+        .attr("class", "zoom")
+        .attr("width", myChart.margins.left)
+        .attr("height", myChart.height)
+        .attr('transform', 'translate(0,' + (myChart.margins.top) +')')
+        .call(myChart.zoom);
     
 }
 
@@ -189,9 +258,35 @@ myChart.addBrush = function(DOMSVGObj){
     
 }
 
+myChart.appendDatasetLabel = function(DOMObj){
+    
+    var legend = DOMObj.selectAll(".legend")
+      .data(myChart.dataset)
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate("+ (myChart.margins.left ) + "," + i * 20 + ")"; });
+    
+    legend.append("rect")
+      .attr("x", myChart.width - 20)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", function(d, i){
+        return myChart.colorScale(i);
+      });
+    
+    legend.append("text")
+      .attr("x", myChart.width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d,i) { return i; });   
+}
 
 
-myChart.run = function(domElement, width, height, margin, xAxis, yAxis, tickType, labelX, labelY, dataLabel, zoomX, zoomY, brush){
+
+myChart.run = function(domElement, width, height, margin, xAxis, yAxis, zoomX, zoomY, brush, labelX, labelY, dataLabel, tickType){
+    
+    console.log(dataLabel)
     
     myChart.width = width;
     myChart.height = height;
@@ -201,12 +296,29 @@ myChart.run = function(domElement, width, height, margin, xAxis, yAxis, tickType
     var svgGroup = myChart.appendChartGroup(svg);
     
     
-    myChart.createAxes(svg, xAxis, yAxis);
+    myChart.createAxes(svg, xAxis, yAxis, labelX, labelY, tickType);
+    
     myChart.generateColorScale();
     myChart.appendData(svgGroup);
     
-    myChart.addBrush(svgGroup);
-    myChart.addZoom(svg);
+    
+    if(brush){
+        myChart.addBrush(svgGroup);
+    }
+    
+    if(zoomX){
+        myChart.addZoomX(svg, xAxis);
+    }
+    
+    if(zoomY){
+        myChart.addZoomY(svg, yAxis);
+    }
+    
+    if(dataLabel){
+        myChart.appendDatasetLabel(svgGroup);
+    }
+    
+        
     
 }
 

@@ -2,3 +2,7 @@
     fill: none;
     pointer-events: all;
 }
+
+.label{
+    opacity: 1;
+}
