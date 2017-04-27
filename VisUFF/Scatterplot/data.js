@@ -23,6 +23,37 @@ dataGenerator.generateData = function(numberOfEntries, numberOfSets){
         dataset.push(array);
     }
     
-    console.log(dataset);
     return dataset;
 }
+
+
+dataGenerator.generateNewData = function(dataset){
+    
+    
+    for(var set = 0; set < dataset.length; set++){
+        
+        var newValueX = Math.random()*100;
+        var newValueY = Math.random()*100;
+        
+        var obj = {'x': newValueX, 'y': newValueY};
+        
+        console.log(dataset[set]);
+        dataset[set].push(obj);
+        console.log(dataset[set]);
+        
+    }
+    
+    return dataset;
+    
+}
+
+dataGenerator.test = function(){
+    
+    var dataset = dataGenerator.generateData(5, 5);
+    console.log('first dataset; ', dataset);
+    
+    dataGenerator.generateNewData(dataset);
+    
+}
+
+window.onload = dataGenerator.test;
