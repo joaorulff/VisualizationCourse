@@ -1,24 +1,27 @@
-//'use strict';
-//
-//var dataGenerator = {};
-//
-//dataGenerator.generateData = function(numberOfSets, numberOfEntries){
-//    
-//    var dataset = {};
-//    
-//    for(var set = 0; set < numberOfSets; set++){
-//        
-//        var currentObj = {key: set};
-//        
-//        for(var entry = 0; entry < numberOfEntries; entry++){
-//            
-//            currentSet.push(Math.random()*100);
-//            
-//        }
-//        
-//        dataset.push(currentSet);
-//    }
-//    
-//    return dataset;
-//    
-//}
+'use strict';
+
+var dataGenerator = {};
+
+dataGenerator.ranges = ["classA", "classB", "classC", "classD", "classE", "classF"];
+dataGenerator.sets = ["Brazil", "EUA", "Mexico", "Canada", "Chile", "Argentina"];
+
+dataGenerator.generateData = function(){
+    
+    var dataset = [];
+    
+    for(var set = 0; set < dataGenerator.sets.length; set++){
+        
+        var currentObj = {key: dataGenerator.sets[set]};
+        
+        for(var rangeIndex = 0; rangeIndex < dataGenerator.ranges.length; rangeIndex++){
+            
+            currentObj[dataGenerator.ranges[rangeIndex]] = Math.random()*1000;
+            
+        }
+        
+        dataset.push(currentObj);
+    }
+    
+    return dataset;
+    
+}
