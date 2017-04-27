@@ -175,13 +175,15 @@ barChart.appendBrush = function(svgRef){
     
 }
 
-barChart.start = function(DOMObj, width, height, margin, xAxis, yAxis, xAxisLabel, yAxisLabel){
+barChart.start = function(
+//DOMObj, width, height, margin, xAxis, yAxis, xAxisLabel, yAxisLabel, 
+){
     
-    barChart.width = width;
-    barChart.height = height;
-    barChart.margin = margin;
+//    barChart.width = width;
+//    barChart.height = height;
+//    barChart.margin = margin;
     
-    var mainSVG = barChart.appendSVG(DOMObj);
+    var mainSVG = barChart.appendSVG("#mainDiv");
     var svgGroup = barChart.appendChartGroup(mainSVG);
     
     barChart.appendData(svgGroup);
@@ -199,4 +201,4 @@ barChart.start = function(DOMObj, width, height, margin, xAxis, yAxis, xAxisLabe
     
 }
 
-//window.onload = barChart.start;
+window.onload = barChart.start;

@@ -21,6 +21,46 @@ myChart.arrayOfGroups   = undefined;
 myChart.brush           = undefined;
 myChart.zoom            = undefined;
 
+
+
+myChart.zoomMethod = function(){
+        
+        var transformation = d3.event.transform;
+        
+        myChart.xScale = transformation.rescaleX(myChart.originalXScale);
+        myChart.xAxis.scale(myChart.xScale);
+      
+        var xAxisGroup = svg.select('.xAxis');
+        
+        if(xAxis){
+            xAxisGroup.call(myChart.xAxis);
+        }
+        
+          
+        svg.select('.chart-area')
+                .selectAll('circle')
+                .attr("cx",  function(d){ return myChart.xScale(d.x);  });  
+        
+}
+
+myChart.brushMethod = function(svgRef){
+    
+    var s = d3.event.selection;
+        var x0 = s[0][0],
+            y0 = s[0][1],
+            x1 = s[1][0],
+            y1 = s[1][1];
+        
+        svgRef.selectAll('circle')
+            .style("fill", function (d) 
+            {   
+                if (myChart.xScale(d.x) >= x0 && myChart.xScale(d.x) <= x1 && 
+                    myChart.yScale(d.y) >= y0 && myChart.yScale(d.y) <= y1)
+                { return "black"; }
+            });
+    
+}
+
 myChart.appendSVG = function(DOMObj){
     
     
@@ -158,36 +198,16 @@ myChart.appendData = function(DOMSVGObj){
 
 myChart.addZoomX = function(svg, xAxis){
     
-    function zoomed(){
-        
-        var transformation = d3.event.transform;
-        
-        myChart.xScale = transformation.rescaleX(myChart.originalXScale);
-        myChart.xAxis.scale(myChart.xScale);
-      
-        var xAxisGroup = svg.select('.xAxis');
-        
-        if(xAxis){
-            xAxisGroup.call(myChart.xAxis);
-        }
-        
-          
-        svg.select('.chart-area')
-                .selectAll('circle')
-                .attr("cx",  function(d){ return myChart.xScale(d.x);  });  
-        
-    }
-    
-    myChart.zoom = d3.zoom().on("zoom", zoomed);
+    myChart.zoom = d3.zoom().on("zoom", myChart.zoomMethod);
     
     svg.append("rect")
         .attr("class", "zoom")
         .attr("width", myChart.width)
         .attr("height", myChart.margins.bottom)
         .attr('transform', 'translate('+ myChart.margins.left +','+ (myChart.height+myChart.margins.top) +')')
-        .call(myChart.zoom); 
+        .call(myChart.zoom);    
     
-    
+    //myChart.brushMethod(svg);
 }
 
 myChart.addZoomY = function(svg, yAxis){
@@ -232,25 +252,8 @@ myChart.generateColorScale = function(){
 
 myChart.addBrush = function(DOMSVGObj){
     
-    function brushed()
-    {        
-        var s = d3.event.selection;
-        var x0 = s[0][0],
-            y0 = s[0][1],
-            x1 = s[1][0],
-            y1 = s[1][1];
-        
-        DOMSVGObj.selectAll('circle')
-            .style("fill", function (d) 
-            {   
-                if (myChart.xScale(d.x) >= x0 && myChart.xScale(d.x) <= x1 && 
-                    myChart.yScale(d.y) >= y0 && myChart.yScale(d.y) <= y1)
-                { return "black"; }
-            });        
-    };
-    
     myChart.brush = d3.brush() 
-                .on('start brush', brushed);
+                .on('start brush', myChart.brushMethod(DOMSVGObj));
     
     DOMSVGObj.append('g')
                 .attr('class', 'brush')

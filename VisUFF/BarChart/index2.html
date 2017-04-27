@@ -49,10 +49,13 @@ d3.csv("data.csv", function(d, i, columns) {
     .enter().append("g")
       .attr("transform", function(d) { return "translate(" + x0(d.State) + ",0)"; })
     .selectAll("rect")
-    .data(function(d) { 
-      console.log( 'test',keys.map(function(key) { return {key: key, value: d[key]}; }));
-      return keys.map(function(key) { return {key: key, value: d[key]}; }); })
-    .enter().append("rect");
+    .data(function(d) { return keys.map(function(key) { return {key: key, value: d[key]}; }); })
+    .enter().append("rect")
+      .attr("x", function(d) { return x1(d.key); })
+      .attr("y", function(d) { return y(d.value); })
+      .attr("width", x1.bandwidth())
+      .attr("height", function(d) { return height - y(d.value); })
+      .attr("fill", function(d) { return z(d.key); });
 });
 
 </script>
